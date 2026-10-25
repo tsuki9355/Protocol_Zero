@@ -1,0 +1,26 @@
+# Unreal Engine generated folders
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Plugins/*/Binaries/
+Plugins/*/Intermediate/
+
+# IDE / generated project files
+.vs/
+.vscode/
+.idea/
+*.sln
+*.code-workspace
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.suo
+
+# Claude Code Game Studios ephemeral state
+production/session-state/*
+!production/session-state/.gitkeep
+production/session-logs/
+project.local.yaml
+.claude/settings.local.json
