@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Combat/PZWeaponComponent.h"
+#include "Combat/PZProjectile.h"
 #include "Combat/PZWeaponData.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
@@ -69,11 +70,15 @@ void UPZWeaponComponent::FireShot()
 	UWorld* World = GetWorld();
 	if (World && WeaponData && WeaponData->ProjectileClass)
 	{
-		FActorSpawnParameters Params;
-		Params.Owner = GetOwner();
-		Params.Instigator = GetOwner() ? GetOwner()->GetInstigator() : nullptr;
-		Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		World->SpawnActor<AActor>(WeaponData->ProjectileClass, Muzzle, Direction.Rotation(), Params);
+		const FTransform SpawnTransform(Direction.Rotation(), Muzzle);
+		APZProjectile* Bolt = World->SpawnActorDeferred<APZProjectile>(
+			WeaponData->ProjectileClass, SpawnTransform, GetOwner(), GetOwner() ? GetOwner()->GetInstigator() : nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		if (Bolt)
+		{
+			Bolt->SetDamage(WeaponData->Damage);
+			Bolt->FinishSpawning(SpawnTransform);
+		}
 	}
 
 #if ENABLE_DRAW_DEBUG

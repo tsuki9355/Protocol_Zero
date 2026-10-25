@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Combat/PZProjectile.h"
 #include "PZWeaponData.generated.h"
 
 /**
@@ -24,7 +25,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (ClampMin = "0.01"))
 	float FireCooldown = 0.1f;
 
-	/** Actor spawned for each bolt. Empty until the projectile story lands. */
+	/** Bolt spawned for each shot. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon")
-	TSubclassOf<AActor> ProjectileClass;
+	TSubclassOf<APZProjectile> ProjectileClass;
 };

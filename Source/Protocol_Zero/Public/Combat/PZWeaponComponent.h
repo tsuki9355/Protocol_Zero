@@ -53,9 +53,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Tuning")
 	TObjectPtr<UPZWeaponData> WeaponData;
 
-	/** Greybox aid: draws a short-lived line per shot. Turn off once bolts are visible. */
+	/** Debug aid: draws a short-lived line per shot along the fire direction. */
 	UPROPERTY(EditAnywhere, Category = "Debug")
-	bool bDrawDebugShots = true;
+	bool bDrawDebugShots = false;
 
 private:
 	void FireShot();

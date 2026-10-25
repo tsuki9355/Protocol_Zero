@@ -18,6 +18,7 @@ else:
 # Placeholders until the tuning pass: moderate damage, rapid fire.
 asset.set_editor_property("damage", 10.0)
 asset.set_editor_property("fire_cooldown", 0.1)
+asset.set_editor_property("projectile_class", unreal.PZProjectile)  # M1-S06
 
 unreal.EditorAssetLibrary.save_loaded_asset(asset)
 unreal.log(f"PZ: {PATH} saved (damage={asset.get_editor_property('damage')}, cooldown={asset.get_editor_property('fire_cooldown')})")
