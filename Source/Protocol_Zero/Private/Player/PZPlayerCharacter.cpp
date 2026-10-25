@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Player/PZPlayerCharacter.h"
+#include "Player/PZAimMath.h"
 #include "Player/PZMovementMath.h"
 #include "Combat/PZHealthComponent.h"
 #include "Camera/CameraComponent.h"
@@ -73,6 +74,17 @@ void APZPlayerCharacter::ApplyTuning()
 	CameraBoom->TargetArmLength = CameraDistance;
 	Camera->SetFieldOfView(CameraFieldOfView);
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+}
+
+void APZPlayerCharacter::AimAt(const FVector& WorldPoint)
+{
+	AimPoint = WorldPoint;
+
+	float Yaw = 0.f;
+	if (PZAimMath::YawToward(GetActorLocation(), WorldPoint, Yaw))
+	{
+		SetActorRotation(FRotator(0.f, Yaw, 0.f));
+	}
 }
 
 void APZPlayerCharacter::Move(const FVector2D& Input)

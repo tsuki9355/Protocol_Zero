@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Player/PZPlayerController.h"
+#include "Player/PZAimMath.h"
 #include "Player/PZPlayerCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -40,6 +41,27 @@ void APZPlayerController::SetupInputComponent()
 	if (UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APZPlayerController::HandleMove);
+	}
+}
+
+void APZPlayerController::PlayerTick(float DeltaTime)
+{
+	Super::PlayerTick(DeltaTime);
+
+	APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(GetPawn());
+	if (!PlayerCharacter)
+	{
+		return;
+	}
+
+	// Aim on the horizontal plane through the character, so empty floor and open space both work.
+	FVector RayOrigin;
+	FVector RayDirection;
+	FVector AimPoint;
+	if (DeprojectMousePositionToWorld(RayOrigin, RayDirection)
+		&& PZAimMath::ProjectCursorToPlane(RayOrigin, RayDirection, PlayerCharacter->GetActorLocation().Z, AimPoint))
+	{
+		PlayerCharacter->AimAt(AimPoint);
 	}
 }
 

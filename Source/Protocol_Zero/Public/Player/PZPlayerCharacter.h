@@ -26,6 +26,15 @@ public:
 	/** Moves on the ground plane relative to the camera. X is right, Y is forward. */
 	void Move(const FVector2D& Input);
 
+	/**
+	 * Turns to face a world-space aim point on the ground plane and remembers it.
+	 * Called every frame by the controller with the point under the mouse cursor.
+	 */
+	void AimAt(const FVector& WorldPoint);
+
+	/** Last point the character aimed at, for the weapon to fire toward. */
+	const FVector& GetAimPoint() const { return AimPoint; }
+
 	/** Yaw of the fixed camera in degrees, used to make WASD camera-relative. */
 	float GetCameraYaw() const { return CameraYaw; }
 
@@ -57,6 +66,8 @@ protected:
 
 private:
 	void ApplyTuning();
+
+	FVector AimPoint = FVector::ZeroVector;
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USpringArmComponent> CameraBoom;

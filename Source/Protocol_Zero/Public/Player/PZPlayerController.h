@@ -25,6 +25,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	virtual void PlayerTick(float DeltaTime) override;
 
 	/** Mapping context added on BeginPlay. Optional; a WASD default is built when empty. */
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
