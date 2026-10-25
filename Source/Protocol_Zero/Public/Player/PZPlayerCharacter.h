@@ -10,6 +10,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class UStaticMeshComponent;
 class UPZHealthComponent;
+class UPZWeaponComponent;
 
 /**
  * The security operative. Moves freely on the ground under a fixed isometric camera
@@ -40,6 +41,9 @@ public:
 
 	/** Player health. */
 	UPZHealthComponent* GetHealth() const { return Health; }
+
+	/** Starting plasma rifle. */
+	UPZWeaponComponent* GetWeapon() const { return Weapon; }
 
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
@@ -85,4 +89,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UPZHealthComponent> Health;
+
+	/** Plasma rifle; its location is the muzzle. */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UPZWeaponComponent> Weapon;
 };

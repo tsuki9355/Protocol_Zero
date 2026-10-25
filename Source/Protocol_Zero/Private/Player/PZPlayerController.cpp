@@ -3,6 +3,7 @@
 #include "Player/PZPlayerController.h"
 #include "Player/PZAimMath.h"
 #include "Player/PZPlayerCharacter.h"
+#include "Combat/PZWeaponComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -33,7 +34,7 @@ void APZPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	if (!DefaultMappingContext || !MoveAction)
+	if (!DefaultMappingContext || !MoveAction || !FireAction)
 	{
 		BuildDefaultInput();
 	}
@@ -41,6 +42,8 @@ void APZPlayerController::SetupInputComponent()
 	if (UEnhancedInputComponent* Input = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		Input->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APZPlayerController::HandleMove);
+		Input->BindAction(FireAction, ETriggerEvent::Started, this, &APZPlayerController::HandleFireStarted);
+		Input->BindAction(FireAction, ETriggerEvent::Completed, this, &APZPlayerController::HandleFireStopped);
 	}
 }
 
@@ -90,6 +93,26 @@ void APZPlayerController::BuildDefaultInput()
 	MapMoveKey(EKeys::S, true, true);
 	MapMoveKey(EKeys::D, false, false);
 	MapMoveKey(EKeys::A, false, true);
+
+	FireAction = NewObject<UInputAction>(this, TEXT("IA_Fire"));
+	FireAction->ValueType = EInputActionValueType::Boolean;
+	DefaultMappingContext->MapKey(FireAction, EKeys::LeftMouseButton);
+}
+
+void APZPlayerController::HandleFireStarted()
+{
+	if (APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(GetPawn()))
+	{
+		PlayerCharacter->GetWeapon()->StartFire();
+	}
+}
+
+void APZPlayerController::HandleFireStopped()
+{
+	if (APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(GetPawn()))
+	{
+		PlayerCharacter->GetWeapon()->StopFire();
+	}
 }
 
 void APZPlayerController::HandleMove(const FInputActionValue& Value)

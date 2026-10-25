@@ -4,6 +4,8 @@
 #include "Player/PZAimMath.h"
 #include "Player/PZMovementMath.h"
 #include "Combat/PZHealthComponent.h"
+#include "Combat/PZWeaponComponent.h"
+#include "Combat/PZWeaponData.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
@@ -59,6 +61,15 @@ APZPlayerCharacter::APZPlayerCharacter()
 
 	Health = CreateDefaultSubobject<UPZHealthComponent>(TEXT("Health"));
 
+	static ConstructorHelpers::FObjectFinder<UPZWeaponData> PlasmaRifle(TEXT("/Game/Data/Weapons/DA_PlasmaRifle.DA_PlasmaRifle"));
+	Weapon = CreateDefaultSubobject<UPZWeaponComponent>(TEXT("Weapon"));
+	Weapon->SetupAttachment(RootComponent);
+	Weapon->SetRelativeLocation(FVector(70.f, 0.f, 30.f));
+	if (PlasmaRifle.Succeeded())
+	{
+		Weapon->SetWeaponData(PlasmaRifle.Object);
+	}
+
 	ApplyTuning();
 }
 
@@ -79,6 +90,7 @@ void APZPlayerCharacter::ApplyTuning()
 void APZPlayerCharacter::AimAt(const FVector& WorldPoint)
 {
 	AimPoint = WorldPoint;
+	Weapon->SetAimPoint(WorldPoint);
 
 	float Yaw = 0.f;
 	if (PZAimMath::YawToward(GetActorLocation(), WorldPoint, Yaw))

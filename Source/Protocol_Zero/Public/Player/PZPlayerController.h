@@ -12,7 +12,7 @@ struct FInputActionValue;
 
 /**
  * Routes Enhanced Input to the player character and keeps the mouse cursor visible for aiming.
- * If no input assets are assigned, it builds the default WASD mapping at runtime.
+ * If no input assets are assigned, it builds the default WASD + left-mouse mapping at runtime.
  */
 UCLASS()
 class PROTOCOL_ZERO_API APZPlayerController : public APlayerController
@@ -35,7 +35,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
 
+	/** Boolean fire action, held for automatic fire. Optional; built with the default mapping when empty. */
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> FireAction;
+
 private:
 	void BuildDefaultInput();
 	void HandleMove(const FInputActionValue& Value);
+	void HandleFireStarted();
+	void HandleFireStopped();
 };
