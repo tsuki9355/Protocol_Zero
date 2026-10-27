@@ -9,3 +9,6 @@
 *.wav filter=lfs diff=lfs merge=lfs -text
 *.ogg filter=lfs diff=lfs merge=lfs -text
 *.mp3 filter=lfs diff=lfs merge=lfs -text
+
+# README media is stored directly so GitHub renders it inline
+Media/** -filter -diff -merge -text
