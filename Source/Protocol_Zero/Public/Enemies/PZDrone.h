@@ -39,6 +39,11 @@ public:
 	/** Drone health. */
 	UPZHealthComponent* GetHealth() const { return Health; }
 
+	/** True from death until the destruction effect finishes and the drone despawns. */
+	bool IsDying() const { return bDying; }
+
+	virtual void Tick(float DeltaSeconds) override;
+
 protected:
 	virtual void PostInitializeComponents() override;
 
@@ -57,4 +62,8 @@ private:
 	TObjectPtr<UPZHealthComponent> Health;
 
 	FPZMeleeAttack Melee;
+
+	bool bDying = false;
+	float DyingElapsed = 0.f;
+	FVector BodyBaseScale = FVector::OneVector;
 };

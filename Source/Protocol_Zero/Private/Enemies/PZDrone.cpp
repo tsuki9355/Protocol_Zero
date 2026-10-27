@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Enemies/PZDrone.h"
+#include "Enemies/PZDestructionMath.h"
 #include "Enemies/PZDroneData.h"
 #include "Enemies/PZHunterAIController.h"
 #include "Combat/PZHealthComponent.h"
@@ -13,7 +14,9 @@
 
 APZDrone::APZDrone()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	// Ticks only while playing the destruction effect.
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	AIControllerClass = APZHunterAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -91,6 +94,39 @@ bool APZDrone::TryMeleeAttack(AActor* Target)
 
 void APZDrone::HandleDeath()
 {
+	bDying = true;
+	DyingElapsed = 0.f;
+	BodyBaseScale = Body->GetRelativeScale3D();
+
+	// Out of the fight at once: no more collisions, movement or AI while the effect plays.
+	SetActorEnableCollision(false);
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+	DetachFromControllerPendingDestroy();
+
 	UE_LOG(LogProtocolZero, Log, TEXT("%s destroyed"), *GetName());
-	Destroy();
+	SetActorTickEnabled(true);
+}
+
+void APZDrone::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!bDying)
+	{
+		return;
+	}
+
+	const float Duration = DroneData ? DroneData->DestructionDuration : 0.f;
+	const float SpinRate = DroneData ? DroneData->DestructionSpinRate : 0.f;
+	DyingElapsed += DeltaSeconds;
+
+	Body->SetRelativeScale3D(BodyBaseScale * PZDestructionMath::DestructionScale(DyingElapsed, Duration));
+	Body->AddLocalRotation(FRotator(0.f, SpinRate * DeltaSeconds, 0.f));
+
+	if (DyingElapsed >= Duration)
+	{
+		UE_LOG(LogProtocolZero, Log, TEXT("%s despawned after %.2fs destruction effect"), *GetName(), DyingElapsed);
+		Destroy();
+	}
 }

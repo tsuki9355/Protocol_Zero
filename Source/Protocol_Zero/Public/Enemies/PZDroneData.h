@@ -35,4 +35,12 @@ public:
 	/** Seconds between melee hits. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Melee", meta = (ClampMin = "0"))
 	float AttackCooldown = 1.f;
+
+	/** Length of the destruction effect before the drone despawns, in seconds. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Death", meta = (ClampMin = "0"))
+	float DestructionDuration = 0.4f;
+
+	/** Spin speed of the body during the destruction effect, in degrees per second. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Death")
+	float DestructionSpinRate = 900.f;
 };

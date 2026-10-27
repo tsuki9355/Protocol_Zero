@@ -24,6 +24,8 @@ data.set_editor_property("move_speed", 550.0)
 data.set_editor_property("attack_range", 150.0)
 data.set_editor_property("attack_damage", 10.0)
 data.set_editor_property("attack_cooldown", 1.0)
+data.set_editor_property("destruction_duration", 0.4)  # M1-S09
+data.set_editor_property("destruction_spin_rate", 900.0)
 unreal.EditorAssetLibrary.save_loaded_asset(data)
 
 les = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
