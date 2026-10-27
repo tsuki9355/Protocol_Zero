@@ -17,10 +17,3 @@ Plugins/*/Intermediate/
 *.opendb
 *.sdf
 *.suo
-
-# Claude Code Game Studios ephemeral state
-production/session-state/*
-!production/session-state/.gitkeep
-production/session-logs/
-project.local.yaml
-.claude/settings.local.json

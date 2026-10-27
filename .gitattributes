@@ -9,6 +9,3 @@
 *.wav filter=lfs diff=lfs merge=lfs -text
 *.ogg filter=lfs diff=lfs merge=lfs -text
 *.mp3 filter=lfs diff=lfs merge=lfs -text
-
-# Keep scripts LF so hooks run under Git Bash
-*.sh text eol=lf
