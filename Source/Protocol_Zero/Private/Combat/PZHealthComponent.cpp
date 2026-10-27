@@ -14,6 +14,13 @@ void UPZHealthComponent::BeginPlay()
 	ResetHealth();
 }
 
+void UPZHealthComponent::SetTuning(float InMaxHealth, float InInvulnerabilityDuration)
+{
+	MaxHealth = InMaxHealth;
+	InvulnerabilityDuration = InInvulnerabilityDuration;
+	ResetHealth();
+}
+
 void UPZHealthComponent::ResetHealth()
 {
 	State = FPZHealthState(MaxHealth, InvulnerabilityDuration);

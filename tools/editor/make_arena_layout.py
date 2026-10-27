@@ -2,6 +2,8 @@
 # a navmesh bounds volume and 8 edge spawn points. Story M1-S07. Safe to re-run: it replaces
 # everything it placed before. Run with the editor closed:
 #   UnrealEditor.exe <abs>/Protocol_Zero.uproject -ExecutePythonScript="<abs>/tools/editor/make_arena_layout.py" -nosplash -unattended
+# Then rebake the static navmesh into the map (or press Build > Build Paths in the editor):
+#   UnrealEditor-Cmd.exe <abs>/Protocol_Zero.uproject -run=ResavePackages -BuildNavigationData -Map=L_Arena_Greybox -ProjectOnly -AllowCommandletRendering -unattended
 
 import unreal
 

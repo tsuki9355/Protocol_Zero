@@ -30,6 +30,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void ApplyDamage(float Amount, FVector HitDirection);
 
+	/**
+	 * Sets the tuning values and restores full health. Call from the owner's constructor or
+	 * PostInitializeComponents to apply data-asset tuning before play starts.
+	 */
+	void SetTuning(float InMaxHealth, float InInvulnerabilityDuration);
+
 	/** Restores full health and clears the invulnerability window, for example on restart. */
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	void ResetHealth();

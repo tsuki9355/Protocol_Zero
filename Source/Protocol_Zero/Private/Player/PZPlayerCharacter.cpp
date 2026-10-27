@@ -60,6 +60,8 @@ APZPlayerCharacter::APZPlayerCharacter()
 	}
 
 	Health = CreateDefaultSubobject<UPZHealthComponent>(TEXT("Health"));
+	// Placeholder tuning: a short grace window so stacked drone hits cannot kill instantly.
+	Health->SetTuning(100.f, 0.5f);
 
 	static ConstructorHelpers::FObjectFinder<UPZWeaponData> PlasmaRifle(TEXT("/Game/Data/Weapons/DA_PlasmaRifle.DA_PlasmaRifle"));
 	Weapon = CreateDefaultSubobject<UPZWeaponComponent>(TEXT("Weapon"));
