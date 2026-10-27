@@ -3,7 +3,11 @@
 #include "Player/PZPlayerController.h"
 #include "Player/PZAimMath.h"
 #include "Player/PZPlayerCharacter.h"
+#include "Combat/PZHealthComponent.h"
 #include "Combat/PZWeaponComponent.h"
+#include "UI/PZDefeatWidget.h"
+#include "Kismet/GameplayStatics.h"
+#include "PZLog.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
@@ -14,6 +18,49 @@
 APZPlayerController::APZPlayerController()
 {
 	bShowMouseCursor = true;
+	DefeatWidgetClass = UPZDefeatWidget::StaticClass();
+}
+
+void APZPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	bPlayerDead = false;
+	if (APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(InPawn))
+	{
+		PlayerCharacter->GetHealth()->OnDeath.AddUniqueDynamic(this, &APZPlayerController::HandlePawnDeath);
+	}
+}
+
+void APZPlayerController::HandlePawnDeath()
+{
+	bPlayerDead = true;
+	if (APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(GetPawn()))
+	{
+		PlayerCharacter->GetWeapon()->StopFire();
+	}
+}
+
+void APZPlayerController::ShowDefeat()
+{
+	if (DefeatWidgetClass)
+	{
+		if (UPZDefeatWidget* Prompt = CreateWidget<UPZDefeatWidget>(this, DefeatWidgetClass))
+		{
+			Prompt->SetIsFocusable(true);
+			Prompt->AddToViewport();
+			FInputModeUIOnly InputMode;
+			InputMode.SetWidgetToFocus(Prompt->TakeWidget());
+			SetInputMode(InputMode);
+		}
+	}
+	UE_LOG(LogProtocolZero, Log, TEXT("Defeat prompt shown"));
+}
+
+void APZPlayerController::RestartRun()
+{
+	UE_LOG(LogProtocolZero, Log, TEXT("Restarting run"));
+	UGameplayStatics::OpenLevel(this, FName(*UGameplayStatics::GetCurrentLevelName(this)));
 }
 
 void APZPlayerController::BeginPlay()
@@ -52,7 +99,7 @@ void APZPlayerController::PlayerTick(float DeltaTime)
 	Super::PlayerTick(DeltaTime);
 
 	APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(GetPawn());
-	if (!PlayerCharacter)
+	if (!PlayerCharacter || bPlayerDead)
 	{
 		return;
 	}
@@ -101,6 +148,11 @@ void APZPlayerController::BuildDefaultInput()
 
 void APZPlayerController::HandleFireStarted()
 {
+	if (bPlayerDead)
+	{
+		return;
+	}
+
 	if (APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(GetPawn()))
 	{
 		PlayerCharacter->GetWeapon()->StartFire();
@@ -117,6 +169,11 @@ void APZPlayerController::HandleFireStopped()
 
 void APZPlayerController::HandleMove(const FInputActionValue& Value)
 {
+	if (bPlayerDead)
+	{
+		return;
+	}
+
 	if (APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(GetPawn()))
 	{
 		PlayerCharacter->Move(Value.Get<FVector2D>());

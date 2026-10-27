@@ -8,6 +8,7 @@
 
 class UInputAction;
 class UInputMappingContext;
+class UPZDefeatWidget;
 struct FInputActionValue;
 
 /**
@@ -22,8 +23,19 @@ class PROTOCOL_ZERO_API APZPlayerController : public APlayerController
 public:
 	APZPlayerController();
 
+	/** Shows the defeat prompt and hands input to it. Called once the player's death effect ends. */
+	void ShowDefeat();
+
+	/** Reloads the arena so the run starts again from the same baseline. */
+	void RestartRun();
+
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* InPawn) override;
+
+	/** Widget shown on defeat. Defaults to the C++ prompt; a Widget Blueprint subclass can replace it. */
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UPZDefeatWidget> DefeatWidgetClass;
 	virtual void SetupInputComponent() override;
 	virtual void PlayerTick(float DeltaTime) override;
 
@@ -44,4 +56,10 @@ private:
 	void HandleMove(const FInputActionValue& Value);
 	void HandleFireStarted();
 	void HandleFireStopped();
+
+	UFUNCTION()
+	void HandlePawnDeath();
+
+	/** True from the player's death until restart; gameplay input is ignored meanwhile. */
+	bool bPlayerDead = false;
 };

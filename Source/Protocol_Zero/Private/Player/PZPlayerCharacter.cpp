@@ -3,6 +3,9 @@
 #include "Player/PZPlayerCharacter.h"
 #include "Player/PZAimMath.h"
 #include "Player/PZMovementMath.h"
+#include "Player/PZPlayerController.h"
+#include "Enemies/PZDestructionMath.h"
+#include "PZLog.h"
 #include "Combat/PZHealthComponent.h"
 #include "Combat/PZWeaponComponent.h"
 #include "Combat/PZWeaponData.h"
@@ -15,7 +18,9 @@
 
 APZPlayerCharacter::APZPlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	// Ticks only while playing the death effect.
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	// Facing is driven by aim, never by the controller or by movement.
 	bUseControllerRotationPitch = false;
@@ -105,4 +110,52 @@ void APZPlayerCharacter::Move(const FVector2D& Input)
 {
 	const FVector Direction = PZMovementMath::CameraRelativeDirection(Input, CameraYaw);
 	AddMovementInput(Direction, Direction.Size());
+}
+
+void APZPlayerCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	Health->OnDeath.AddDynamic(this, &APZPlayerCharacter::HandleDeath);
+}
+
+void APZPlayerCharacter::HandleDeath()
+{
+	bDying = true;
+	DyingElapsed = 0.f;
+	BodyBaseScale = Body->GetRelativeScale3D();
+	MarkerBaseScale = FacingMarker->GetRelativeScale3D();
+	MarkerBaseLocation = FacingMarker->GetRelativeLocation();
+
+	Weapon->StopFire();
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
+
+	UE_LOG(LogProtocolZero, Log, TEXT("Player died"));
+	SetActorTickEnabled(true);
+}
+
+void APZPlayerCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!bDying)
+	{
+		return;
+	}
+
+	DyingElapsed += DeltaSeconds;
+	const float Scale = PZDestructionMath::DestructionScale(DyingElapsed, DeathEffectDuration);
+	Body->SetRelativeScale3D(BodyBaseScale * Scale);
+	FacingMarker->SetRelativeScale3D(MarkerBaseScale * Scale);
+	FacingMarker->SetRelativeLocation(MarkerBaseLocation * Scale);
+
+	if (DyingElapsed >= DeathEffectDuration)
+	{
+		bDying = false;
+		SetActorTickEnabled(false);
+		if (APZPlayerController* PlayerController = Cast<APZPlayerController>(GetController()))
+		{
+			PlayerController->ShowDefeat();
+		}
+	}
 }

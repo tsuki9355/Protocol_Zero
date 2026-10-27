@@ -75,13 +75,19 @@ bool APZDrone::TryMeleeAttack(AActor* Target)
 		return false;
 	}
 
+	UPZHealthComponent* TargetHealth = Target->FindComponentByClass<UPZHealthComponent>();
+	if (TargetHealth && TargetHealth->IsDead())
+	{
+		return false;
+	}
+
 	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
 	if (!Melee.TryAttack(Now, FVector::Dist2D(GetActorLocation(), Target->GetActorLocation())))
 	{
 		return false;
 	}
 
-	if (UPZHealthComponent* TargetHealth = Target->FindComponentByClass<UPZHealthComponent>())
+	if (TargetHealth)
 	{
 		const float Damage = DroneData ? DroneData->AttackDamage : 0.f;
 		const FVector CameFrom = (GetActorLocation() - Target->GetActorLocation()).GetSafeNormal2D();

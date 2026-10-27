@@ -45,8 +45,15 @@ public:
 	/** Starting plasma rifle. */
 	UPZWeaponComponent* GetWeapon() const { return Weapon; }
 
+	virtual void Tick(float DeltaSeconds) override;
+
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
+	virtual void PostInitializeComponents() override;
+
+	/** Length of the death effect before the defeat prompt appears, in seconds. */
+	UPROPERTY(EditDefaultsOnly, Category = "Tuning|Death", meta = (ClampMin = "0"))
+	float DeathEffectDuration = 1.f;
 
 	/** Camera pitch in degrees. Negative looks down. */
 	UPROPERTY(EditDefaultsOnly, Category = "Tuning|Camera")
@@ -70,6 +77,15 @@ protected:
 
 private:
 	void ApplyTuning();
+
+	UFUNCTION()
+	void HandleDeath();
+
+	bool bDying = false;
+	float DyingElapsed = 0.f;
+	FVector BodyBaseScale = FVector::OneVector;
+	FVector MarkerBaseScale = FVector::OneVector;
+	FVector MarkerBaseLocation = FVector::ZeroVector;
 
 	FVector AimPoint = FVector::ZeroVector;
 
