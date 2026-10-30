@@ -4,7 +4,7 @@ A single-player, top-down sci-fi arena survival shooter built in **Unreal Engine
 
 A lone security operative is trapped in a research facility after its experimental AI defense system turns hostile. Survive five escalating waves of drones, take an upgrade after each wave, and clear Wave 5 to trigger Protocol Zero and shut the system down. A run lasts about 8 to 12 minutes.
 
-> **Status: in development.** Milestone 1, the core combat slice, is playable: movement, cursor aiming, automatic fire, Hunter drones, death and restart. Waves, the Sentry drone, upgrades and the HUD are next. The art is greybox placeholder until the final models arrive.
+> **Status: in development.** Milestone 1, the core combat slice, is complete and playable: movement, cursor aiming, automatic fire, Hunter drones, a health HUD, death and restart. Waves, the Sentry drone and upgrades are next. The art is greybox placeholder until the final models arrive.
 
 ![Gameplay: Hunter drones path around cover toward the operative, who fires plasma bolts](Media/gameplay.gif)
 
@@ -19,6 +19,7 @@ A lone security operative is trapped in a research facility after its experiment
 - **Plasma rifle.** Hold the left mouse button for automatic fire. Bolts are visible and take time to travel. They hit drones and cover, never the player or other projectiles.
 - **Hunter drone.** It follows the navmesh around cover to reach the player, then attacks in melee on a cooldown. There is no contact damage.
 - **Health with a post-hit grace window**, so stacked hits cannot kill instantly. Destroyed drones play a short destruction effect, then despawn.
+- **Health HUD.** A health readout in the corner updates on every hit.
 - **Death and restart.** A death effect plays, then a defeat prompt lets you restart the run from the same baseline.
 
 ## Engineering highlights
@@ -28,11 +29,11 @@ A lone security operative is trapped in a research facility after its experiment
 - **Frame-rate-independent automatic fire.** The fire cadence counts every shot due since the last frame, so long frames never drop shots and re-pressing the trigger never beats the cooldown.
 - **Custom collision channels.** `PlayerProjectile`, `EnemyProjectile` and `Enemy` object channels encode who can hit whom: no friendly fire, no projectile-versus-projectile hits, and cover blocks everything.
 - **Navmesh AI.** An `AAIController` subclass drives pursuit and melee on a 10 Hz decision tick, while path following runs on its own.
-- **UMG built in C++.** The defeat prompt constructs its widget tree in code, with localizable text and no Widget Blueprint dependency.
+- **UMG built in C++.** The HUD and defeat prompt build their widget trees in code, with localizable text and no Widget Blueprint dependency.
 
 ## Tests
 
-33 Unreal automation tests cover health and the grace window, movement, aiming, fire cadence, melee, the destruction curve, and projectile collision. The projectile tests spawn real bolts in a test world and verify they damage enemies, stop at cover and pass through the player.
+36 Unreal automation tests cover health and the grace window, movement, aiming, fire cadence, melee, the destruction curve, HUD text, and projectile collision. The projectile tests spawn real bolts in a test world and verify they damage enemies, stop at cover and pass through the player.
 
 ```bash
 UnrealEditor-Cmd.exe "<abs path>/Protocol_Zero.uproject" -ExecCmds="Automation RunTests Protocol_Zero.; Quit" -unattended -nullrhi -stdout
@@ -47,7 +48,7 @@ UnrealEditor-Cmd.exe "<abs path>/Protocol_Zero.uproject" -ExecCmds="Automation R
 | Combat | `UPZHealthComponent` / `FPZHealthState`, `UPZWeaponComponent` / `FPZFireCadence`, `APZProjectile`, `FPZMeleeAttack`, `UPZWeaponData` |
 | Enemies | `APZDrone`, `APZHunterAIController`, `UPZDroneData`, `PZDestructionMath` |
 | Arena | `APZSpawnPoint`, `L_Arena_Greybox` (baked navmesh) |
-| UI | `UPZDefeatWidget` |
+| UI | `UPZHudWidget`, `PZHudFormat`, `UPZDefeatWidget` |
 
 Source lives in `Source/Protocol_Zero/`, split into `Public/` and `Private/`. Tests are in `Private/Tests/`. Editor Python scripts that rebuild the arena and data assets are in `tools/editor/`.
 
@@ -55,7 +56,7 @@ Source lives in `Source/Protocol_Zero/`, split into `Public/` and `Private/`. Te
 
 1. **Core combat slice:** done.
 2. **Full wave loop:** five escalating waves of timed spawn groups, the ranged Sentry drone, pause, and victory and defeat results screens.
-3. **Upgrades and HUD:** three random picks after each wave from damage, fire rate, projectile count and max health, plus a HUD with health, wave, enemies remaining and upgrades, and damage feedback.
+3. **Upgrades and HUD:** three random picks after each wave from damage, fire rate, projectile count and max health, plus wave, enemies remaining and upgrades on the HUD, and damage feedback.
 4. **Presentation:** intro text and the Protocol Zero shutdown sequence, SFX and music, settings, an art pass and final tuning.
 
 The full design is in [Protocol_Zero_Design.md](Protocol_Zero_Design.md), and the implementation plan is in [Protocol_Zero_Plan.md](Protocol_Zero_Plan.md).

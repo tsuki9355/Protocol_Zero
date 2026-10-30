@@ -9,6 +9,7 @@
 class UInputAction;
 class UInputMappingContext;
 class UPZDefeatWidget;
+class UPZHudWidget;
 struct FInputActionValue;
 
 /**
@@ -36,6 +37,11 @@ protected:
 	/** Widget shown on defeat. Defaults to the C++ prompt; a Widget Blueprint subclass can replace it. */
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UPZDefeatWidget> DefeatWidgetClass;
+
+	/** Combat HUD shown while playing. Defaults to the C++ HUD; a Widget Blueprint subclass can replace it. */
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UPZHudWidget> HudWidgetClass;
+
 	virtual void SetupInputComponent() override;
 	virtual void PlayerTick(float DeltaTime) override;
 
@@ -59,6 +65,9 @@ private:
 
 	UFUNCTION()
 	void HandlePawnDeath();
+
+	UPROPERTY()
+	TObjectPtr<UPZHudWidget> Hud;
 
 	/** True from the player's death until restart; gameplay input is ignored meanwhile. */
 	bool bPlayerDead = false;

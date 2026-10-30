@@ -6,6 +6,7 @@
 #include "Combat/PZHealthComponent.h"
 #include "Combat/PZWeaponComponent.h"
 #include "UI/PZDefeatWidget.h"
+#include "UI/PZHudWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "PZLog.h"
 #include "EnhancedInputComponent.h"
@@ -19,6 +20,7 @@ APZPlayerController::APZPlayerController()
 {
 	bShowMouseCursor = true;
 	DefeatWidgetClass = UPZDefeatWidget::StaticClass();
+	HudWidgetClass = UPZHudWidget::StaticClass();
 }
 
 void APZPlayerController::OnPossess(APawn* InPawn)
@@ -29,6 +31,16 @@ void APZPlayerController::OnPossess(APawn* InPawn)
 	if (APZPlayerCharacter* PlayerCharacter = Cast<APZPlayerCharacter>(InPawn))
 	{
 		PlayerCharacter->GetHealth()->OnDeath.AddUniqueDynamic(this, &APZPlayerController::HandlePawnDeath);
+
+		if (!Hud && HudWidgetClass && IsLocalController())
+		{
+			Hud = CreateWidget<UPZHudWidget>(this, HudWidgetClass);
+			Hud->AddToViewport();
+		}
+		if (Hud)
+		{
+			Hud->TrackHealth(PlayerCharacter->GetHealth());
+		}
 	}
 }
 
