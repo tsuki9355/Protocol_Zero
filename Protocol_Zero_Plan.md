@@ -1,120 +1,103 @@
-# Protocol Zero: Assessment and Implementation Plan
+# Protocol Zero: Development Plan
 
-2026-10-24 · Read-only assessment. Nothing in the Unreal project has been changed.
-Source of truth: `Protocol_Zero_Design.md`. Rigor: minimal (no GDDs, no ADRs, the design doc is the design record).
+Design source of truth: [Protocol_Zero_Design.md](Protocol_Zero_Design.md). This plan turns that design into milestones and small, testable stories. It adds no mechanics the design doesn't name.
 
----
-
-## 1. Decisions needed before anything is written
-
-1. **Approve this plan** (architecture, milestones, Milestone 1 stories).
-2. **Allow config writes**: `/setup-engine` to pin UE 5.8 + C++ in `project.yaml`, and `/start`'s `modes.rigor: minimal`. These are the only `/adopt` actions needed.
-3. **Initialise git** in the project folder (it is not a repository yet). Recommended before the first code change.
-4. **UI framework**: plain UMG (recommended, fewest moving parts) or CommonUI (settings exist in `DefaultGame.ini`, but the plugin is not enabled in the `.uproject`).
+**Engine:** Unreal Engine 5.8 · **Language:** C++ first, with Data Assets for tuning · **UI:** plain UMG built in C++ · **Platform:** Windows PC, keyboard and mouse
 
 ---
 
-## 2. Project stage assessment (`/project-stage-detect` equivalent)
+## Status
 
-**Stage: Pre-production. The concept and design are complete; no gameplay is implemented.**
-
-### Working
-- UE 5.8 C++ project with one runtime module, `Protocol_Zero`, which has compiled (editor DLL exists in `Binaries/Win64`).
-- `EnhancedInput` is a module dependency and the default player input and input component classes are Enhanced Input (`Config/DefaultInput.ini`).
-- Windows DX12 / SM6 target. Lumen, virtual shadow maps, ray tracing and Substrate are on (`Config/DefaultEngine.ini`).
-- Studio framework installed (`.claude/`, `design/`, `docs/`, `production/`), with UE 5.8 engine reference docs.
-
-### Incomplete or misconfigured
-- `GameDefaultMap` points at the engine's `OpenWorld` template, not a project map. No `GlobalDefaultGameMode` is set.
-- `Content/` holds only `Test.umap` (6.6 KB, effectively empty) and a `Developers/AngusChou` folder.
-- Module source is the UE template stub only (`Protocol_Zero.cpp/.h`, `Build.cs`).
-- `project.yaml` has no `engine:` or `modes:` block, so `/start` and `/setup-engine` have never run. `docs/engine-reference/unreal/VERSION.md` says the installed version is "NOT DETERMINED".
-- `DefaultGame.ini` carries CommonUI settings while the CommonUI plugin is not enabled.
-- Not a git repository.
-- Observation, no action proposed now: ray tracing and the full Lumen stack are expensive for a low-poly top-down arena. Worth revisiting during the performance pass.
-
-### Missing (every system in the design)
-Player movement, cursor aim and camera · health, invulnerability window and death · plasma rifle and projectiles · Hunter Drone · Sentry Drone · arena, cover and navmesh · spawn points and timed groups · five-wave progression · upgrade selection (4 categories) · HUD and damage feedback · pause, victory, defeat and restart · intro text and shutdown message · SFX and music · master volume and mouse sensitivity settings.
-
-### `/adopt` verdict
-There is no existing gameplay code or content to migrate. Adoption is limited to the config steps in Decision 2.
-
----
-
-## 3. Recommended architecture
-
-**Rule of thumb:** C++ owns rules, state and math (testable). Blueprint subclasses own meshes, VFX, sounds, widget layout and tuning data. All tuning values live in Data Assets, per the coding standards.
-
-Folder layout under `Source/Protocol_Zero/` (Public/Private split):
-
-| Area | C++ classes | Blueprint / data |
+| Milestone | Goal | Status |
 |---|---|---|
-| **Core / run flow** | `APZGameMode`: run state machine (Intro, WaveActive, UpgradeSelect, Countdown, Victory, Defeat). `APZGameState`: current wave, enemies remaining, run stats (enemies defeated, time survived, damage taken). | `BP_PZGameMode` |
-| **Player** | `APZPlayerCharacter` (ACharacter, spring-arm camera fixed at 45°). `APZPlayerController`: Enhanced Input, cursor ground trace, pause. | `BP_PlayerCharacter`, `IA_Move`, `IA_Fire`, `IA_Pause`, `IMC_Default` |
-| **Shared combat** | `UPZHealthComponent`: health, max health, post-hit invulnerability window, `OnDamaged(amount, direction)`, `OnDeath`. Used by player and drones. | `DA_PlayerTuning` |
-| **Weapon** | `UPZWeaponComponent`: cooldown, damage, projectile count, narrow spread centred on the cursor. `APZProjectile`: `UProjectileMovementComponent` (finite speed). | `BP_PlasmaBolt`, `DA_PlasmaRifle` |
-| **Collision** | Custom channels / profiles: `PlayerProjectile` hits Enemy + WorldStatic, `EnemyProjectile` hits Player + WorldStatic, projectiles ignore each other and their own side. | Set in Project Settings |
-| **Enemies** | `APZDroneBase` (ACharacter, nav-driven) + `APZDroneAIController`. `APZHunterDrone`: pursue via navmesh, melee on cooldown in range. `APZSentryDrone`: move to preferred range, hold, fire on cooldown. Death: play destruction effect, then despawn. Plain C++ state logic in the controller; two simple behaviours do not justify Behavior Trees. | `BP_HunterDrone`, `BP_SentryDrone`, `DA_Hunter`, `DA_Sentry` |
-| **Waves** | `UPZWaveDefinition` (Data Asset): spawn groups (drone class, count, delay) plus health and damage multipliers. `UPZWaveManagerComponent` on the GameMode. `APZSpawnPoint` actors at arena edges with a minimum-distance-from-player check. | `DA_Wave_01..05` |
-| **Upgrades** | `UPZUpgradeDefinition` (category: Damage, FireRate, ProjectileCount, MaxHealth; percent). `UPZUpgradeComponent` on the player: stacks, rolls 3 random offers, applies to weapon and health (max health also heals by the amount gained). | `DA_Upgrade_*` |
-| **UI** | Thin C++ base widgets exposing data: HUD, upgrade overlay, pause, results, intro, settings. | `WBP_*` layouts in UMG |
-| **Settings** | `UPZGameUserSettings` (subclass of `UGameUserSettings`): master volume, mouse sensitivity. | `SC_Master` sound class + mix |
-
-Tests: Unreal automation tests in `Source/Protocol_Zero/Private/Tests/` for health and invulnerability, weapon cooldown and spread, upgrade math, wave definition parsing and the spawn distance rule.
+| 1. Core combat slice | Move, aim, shoot and survive Hunter drones in a greybox arena | **Done** (11 of 11 stories) |
+| 2. Full wave loop | A complete run: five waves, both drone types, pause, and victory or defeat results | **Next** (0 of 11 stories) |
+| 3. Upgrades and HUD | Post-wave upgrade picks and the full combat HUD | Planned |
+| 4. Presentation | Narrative, audio, settings, art pass, tuning and packaging | Planned |
 
 ---
 
-## 4. Epics and milestones (`/create-epics` equivalent)
+## Architecture
 
-Each epic maps to one architecture area above. Every item traces to the design doc; nothing is added.
+C++ owns rules, state and math. Data Assets own every tuning number. Blueprints and art replace greybox visuals later without code changes. Rules that can be pure (health, fire cadence, melee, aim, movement, wave schedule, spawn rules, run state) live in engine-free C++ structs and functions, so they're unit-tested deterministically, with time passed in.
 
-**Milestone 1: Core combat slice**
-- E1 Project foundation (config, map, GameMode, collision channels, test scaffold)
-- E2 Player (movement, cursor aim, camera, health and invulnerability)
-- E3 Weapon and projectiles
-- E4 Hunter Drone
-- E5 Greybox arena (cover, navmesh, edge spawn points)
+| Area | Built (Milestone 1) | Planned |
+|---|---|---|
+| Run flow | `APZGameMode` | Run state machine (waves, countdown, victory, defeat), `APZGameState` run stats |
+| Player | `APZPlayerCharacter`, `APZPlayerController`, `PZMovementMath`, `PZAimMath` | Pause input |
+| Combat | `UPZHealthComponent` / `FPZHealthState`, `UPZWeaponComponent` / `FPZFireCadence`, `APZProjectile`, `FPZMeleeAttack`, `UPZWeaponData` | Projectile count and spread (upgrades) |
+| Enemies | `APZDrone`, `APZHunterAIController`, `UPZDroneData` (`DA_Hunter`), `PZDestructionMath` | Sentry drone and its AI controller (`DA_Sentry`) |
+| Waves | `APZSpawnPoint` ×8 in `L_Arena_Greybox` | `UPZWaveData` (`DA_Wave_01..05`), wave schedule, spawn-point rules, wave manager |
+| Upgrades | | Upgrade data, upgrade component, selection overlay |
+| UI | `UPZHudWidget` (health), `UPZDefeatWidget` | Countdown, results screen, pause menu, later wave/enemies/upgrades HUD |
+| Collision | `PlayerProjectile`, `EnemyProjectile`, `Enemy` channels and profiles | |
+
+Tests live in `Source/Protocol_Zero/Private/Tests/`, named `Protocol_Zero.[System].[Scenario]`. 36 pass at the end of Milestone 1.
+
+---
+
+## Milestones
+
+**Milestone 1: Core combat slice** (done)
+- E1 Project foundation · E2 Player · E3 Weapon and projectiles · E4 Hunter drone · E5 Greybox arena
 
 **Milestone 2: Full wave loop**
-- E6 Wave and spawn system (timed groups, five waves, countdown)
-- E7 Sentry Drone
-- E8 Run flow (pause, victory, defeat with death effect, results screen, restart)
+- E6 Wave and spawn system: timed spawn groups, five escalating waves, countdown between waves
+- E7 Sentry drone
+- E8 Run flow: pause, victory, defeat, results screen, restart
 
 **Milestone 3: Upgrades and HUD**
-- E9 Upgrades (three random picks, four categories, repeatable, percentage-based)
-- E10 HUD and damage feedback (health, wave, enemies remaining, current upgrades, screen flash, directional hit indicator)
+- E9 Upgrades: three random picks after each cleared wave from four repeatable, percentage-based categories
+- E10 HUD and damage feedback: wave, enemies remaining, current upgrades, screen flash, directional hit indicator
 
 **Milestone 4: Presentation and shipping**
-- E11 Narrative (intro text, Protocol Zero shutdown sequence and message)
-- E12 Audio (shooting, impact, enemy death, UI SFX, one looping music track)
-- E13 Settings (master volume, mouse sensitivity)
-- E14 Art pass, tuning to the 8-12 minute run target, Windows packaging
+- E11 Narrative: intro text, Protocol Zero shutdown sequence and message
+- E12 Audio: shooting, impact, enemy death and UI sound effects, one looping music track
+- E13 Settings: master volume, mouse sensitivity
+- E14 Art pass, tuning to the 8 to 12 minute run, Windows packaging
 
 ---
 
-## 5. Milestone 1 stories (`/create-stories` equivalent)
+## Milestone 1 stories (done)
+
+| ID | Story | Result |
+|---|---|---|
+| M1-S01 | Arena map as the default map, project GameMode, projectile and enemy collision channels | Done |
+| M1-S02 | Health component with a post-hit invulnerability window and single death event | Done, 6 tests |
+| M1-S03 | Player character: WASD movement relative to a fixed 45° isometric camera | Done, 4 tests |
+| M1-S04 | Character continuously faces the mouse cursor | Done, 5 tests |
+| M1-S05 | Plasma rifle: hold the left mouse button for automatic fire at the weapon cooldown | Done, 6 tests |
+| M1-S06 | Plasma bolt with finite travel time; hits enemies and cover, never the player | Done, 3 world tests |
+| M1-S07 | Greybox arena: walls, permanent cover, navmesh, 8 edge spawn points | Done (navmesh fixed in S08) |
+| M1-S08 | Hunter drone: navmesh pursuit around cover, melee on a cooldown, no contact damage | Done, 5 tests |
+| M1-S09 | Drone destruction effect, then despawn | Done, 4 tests |
+| M1-S10 | Player death effect, defeat prompt, restart | Done |
+| M1-S11 | Health readout on the HUD | Done, 3 tests |
+
+---
+
+## Milestone 2 stories
 
 | ID | Story | Done when | Evidence |
 |---|---|---|---|
-| M1-S01 | Configure project: create `L_Arena_Greybox`, set it as the default map, create and assign `BP_PZGameMode`, add projectile collision channels | PIE opens the arena with the project GameMode | Screenshot |
-| M1-S02 | `UPZHealthComponent`: damage, death event, invulnerability window | Automation tests pass: damage reduces health, hits inside the window are ignored, death fires once at 0 | Unit test |
-| M1-S03 | Player character and controller: WASD with Enhanced Input, fixed 45° camera | Player moves freely in 8 directions, camera angle stays fixed | Screenshot |
-| M1-S04 | Cursor aim: character continuously faces the mouse cursor | Character rotates to the cursor's ground point every frame | Screenshot |
-| M1-S05 | `UPZWeaponComponent`: hold LMB for automatic fire at the cooldown, tuning from `DA_PlasmaRifle` | Test: shots per second matches the cooldown; holding fires continuously | Unit test + screenshot |
-| M1-S06 | `APZProjectile`: visible bolt with finite travel time, hits enemies and cover, no friendly fire | Bolts stop on cover, damage drones, pass no damage to the player | Integration test |
-| M1-S07 | Greybox arena: floor, permanent cover blocking movement and projectiles, NavMeshBoundsVolume, edge `APZSpawnPoint` actors | Navmesh covers the floor and routes around cover | Screenshot (nav view) |
-| M1-S08 | Hunter Drone: navmesh pursuit around cover, short-range melee on cooldown (no contact damage) | Hunter reaches the player around cover and hits at the configured interval | Integration test + screenshot |
-| M1-S09 | Drone death: brief destruction effect, then despawn | Killed drones play the effect and are removed | Screenshot |
-| M1-S10 | Player death and restart: short death effect, then a minimal defeat prompt that restarts the run | Dying shows the prompt; restart reloads the arena at baseline | Screenshot |
-| M1-S11 | Minimal health readout on the HUD | Health text updates when the player is hit | Screenshot |
+| M2-S01 | **Wave data and schedule.** `UPZWaveData` Data Asset holding ordered spawn groups (drone type, count, delay after the previous group) plus health and damage multipliers. A pure `FPZWaveSchedule` reports which groups are due at a given time. | Tests: groups release in order at their delays; a wave reports when every group has released | Unit tests |
+| M2-S02 | **Spawn-point rules.** Pure selection that picks edge spawn points outside a minimum distance from the player, with the distance as tuning. | Tests: points inside the minimum distance are never chosen; a fallback picks the farthest point if none qualify | Unit tests |
+| M2-S03 | **Wave manager.** A component on the GameMode spawns each group at chosen spawn points, applies the wave's health and damage multipliers, tracks enemies remaining and fires a wave-cleared event when all are destroyed. The three placed test Hunters are removed. Waves are Hunter-only until S05. | Starting a wave spawns timed Hunter groups from the edges; killing them all fires wave cleared | Integration test + in-game log |
+| M2-S04 | **Sentry drone.** A slower ranged drone that paths to its preferred range, stops, and fires enemy projectiles at the player on a cooldown. Its shots hit the player and cover only. Tuning in `DA_Sentry`. | Sentry holds range around cover and its shots damage the player and stop at cover | Unit tests (range logic) + in-game log |
+| M2-S05 | **Five-wave roster.** `DA_Wave_01..05` with placeholder numbers: early waves Hunter-heavy, later waves a larger Sentry presence, enemy count, health and damage rising each wave, and Wave 5 the largest. | All five assets load, and composition and multipliers rise wave over wave | Data test |
+| M2-S06 | **Run state machine.** Pure `FPZRunState`: WaveActive → WaveCleared → Countdown → next wave; after Wave 5 → Victory; on player death → Defeat. The GameMode drives the wave manager from it. Upgrade selection slots in between WaveCleared and Countdown in Milestone 3. | Tests cover every transition, including no second outcome after Victory or Defeat | Unit tests |
+| M2-S07 | **Visible countdown.** A countdown overlay between waves, from the countdown length in tuning. | The countdown appears after each cleared wave and the next wave starts at zero | Screenshot |
+| M2-S08 | **Run stats.** `APZGameState` records wave reached, enemies defeated, time survived and damage taken. | Tests for stat accumulation; values match a played run | Unit tests + log |
+| M2-S09 | **Results screen.** Replaces the defeat prompt. Shows outcome, wave reached, enemies defeated, time survived, damage taken and Restart, for both victory and defeat. Victory goes straight to results until the shutdown sequence lands in Milestone 4. | Both outcomes show correct stats; Restart starts a fresh run | Screenshot of each outcome |
+| M2-S10 | **Pause menu.** Esc pauses the game and opens a menu with Resume and Restart. | Esc freezes drones, projectiles and timers; Resume continues; Restart resets | Screenshot |
+| M2-S11 | **End-to-end run check.** Play a full run from Wave 1 to victory, and one to defeat, then fix anything that breaks. | One logged victory run and one defeat run with no errors | Playtest log |
 
-Order: S01, S02, then S03-S06 in parallel with S07, then S08-S11.
+**Order:** S01 and S02 in either order, then S03. S04 can start any time after S03. Then S05, S06 and S07. S08 can go alongside S06. Then S09, S10 and S11.
+
+**Milestone 2 slice: "Survive Protocol Zero."** Start a run, fight five escalating waves of Hunters and Sentries with a countdown between them, pause at any time, and finish on a victory or defeat results screen that restarts the run. Numbers are placeholders until the Milestone 4 tuning pass.
 
 ---
 
-## 6. Recommended first vertical slice
+## Explicitly out of scope until later milestones
 
-**"Survive the Hunters": the end state of Milestone 1.**
-The player spawns in the greybox arena, moves with WASD, aims at the cursor and holds LMB to fire plasma bolts. A small fixed set of Hunter Drones (placed or spawned from edge points, no wave system yet) pathfind around cover and melee on cooldown. The player can kill them, can die, and can restart.
-
-Why this first: it proves the riskiest pieces of the design together (cursor aim feel, projectile travel and collision against cover, navmesh pursuit, melee timing with the invulnerability window) using only systems every later milestone builds on. Waves, Sentries and upgrades then slot in without reworking it.
+Upgrade selection and upgrade effects (M3) · wave, enemies remaining and upgrades on the HUD, screen flash and hit indicator (M3) · intro text and shutdown sequence (M4) · audio and settings (M4) · final art and tuning (M4). Nothing beyond the design doc is planned: no bosses, extra enemy types, arena modifiers, persistent progression or extra settings.
