@@ -63,6 +63,18 @@ void APZDrone::PostInitializeComponents()
 	Health->OnDeath.AddDynamic(this, &APZDrone::HandleDeath);
 }
 
+void APZDrone::ApplyWaveMultipliers(float HealthMultiplier, float DamageMultiplier)
+{
+	const float BaseHealth = DroneData ? DroneData->MaxHealth : Health->GetMaxHealth();
+	Health->SetTuning(BaseHealth * FMath::Max(HealthMultiplier, 0.01f), 0.f);
+	WaveDamageMultiplier = FMath::Max(DamageMultiplier, 0.f);
+}
+
+float APZDrone::GetAttackDamage() const
+{
+	return (DroneData ? DroneData->AttackDamage : 0.f) * WaveDamageMultiplier;
+}
+
 bool APZDrone::IsInMeleeRange(const AActor* Target) const
 {
 	return Target && Melee.IsInRange(FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()));
@@ -89,7 +101,7 @@ bool APZDrone::TryMeleeAttack(AActor* Target)
 
 	if (TargetHealth)
 	{
-		const float Damage = DroneData ? DroneData->AttackDamage : 0.f;
+		const float Damage = GetAttackDamage();
 		const FVector CameFrom = (GetActorLocation() - Target->GetActorLocation()).GetSafeNormal2D();
 		TargetHealth->ApplyDamage(Damage, CameFrom);
 		UE_LOG(LogProtocolZero, Log, TEXT("%s melee attack on %s for %.1f (target health now %.1f)"),

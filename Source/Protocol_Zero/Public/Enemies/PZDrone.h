@@ -42,6 +42,15 @@ public:
 	/** True from death until the destruction effect finishes and the drone despawns. */
 	bool IsDying() const { return bDying; }
 
+	/**
+	 * Scales this drone's base health and damage for the current wave and restores full health.
+	 * Called by the wave manager right after spawning.
+	 */
+	void ApplyWaveMultipliers(float HealthMultiplier, float DamageMultiplier);
+
+	/** Damage per attack after the wave multiplier. */
+	float GetAttackDamage() const;
+
 	virtual void Tick(float DeltaSeconds) override;
 
 protected:
@@ -62,6 +71,8 @@ private:
 	TObjectPtr<UPZHealthComponent> Health;
 
 	FPZMeleeAttack Melee;
+
+	float WaveDamageMultiplier = 1.f;
 
 	bool bDying = false;
 	float DyingElapsed = 0.f;
