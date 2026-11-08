@@ -2,6 +2,7 @@
 
 #include "Combat/PZProjectile.h"
 #include "Combat/PZHealthComponent.h"
+#include "PZLog.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -51,8 +52,13 @@ void APZProjectile::HandleStop(const FHitResult& Hit)
 		{
 			const FVector CameFrom = -GetActorForwardVector();
 			Health->ApplyDamage(Damage, CameFrom);
+			UE_LOG(LogProtocolZero, Verbose, TEXT("%s hit %s for %.1f"), *GetClass()->GetName(), *HitActor->GetName(), Damage);
+			Destroy();
+			return;
 		}
 	}
+
+	UE_LOG(LogProtocolZero, VeryVerbose, TEXT("%s stopped on %s"), *GetClass()->GetName(), *GetNameSafe(Hit.GetActor()));
 
 	Destroy();
 }

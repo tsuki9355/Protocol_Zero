@@ -5,6 +5,7 @@
 #include "Enemies/PZDroneData.h"
 #include "Enemies/PZHunterAIController.h"
 #include "Combat/PZHealthComponent.h"
+#include "Combat/PZProjectile.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
@@ -57,7 +58,7 @@ void APZDrone::PostInitializeComponents()
 	{
 		Health->SetTuning(DroneData->MaxHealth, 0.f);
 		GetCharacterMovement()->MaxWalkSpeed = DroneData->MoveSpeed;
-		Melee = FPZMeleeAttack(DroneData->AttackRange, DroneData->AttackCooldown);
+		AttackGate = FPZMeleeAttack(DroneData->AttackRange, DroneData->AttackCooldown);
 	}
 
 	Health->OnDeath.AddDynamic(this, &APZDrone::HandleDeath);
@@ -77,7 +78,7 @@ float APZDrone::GetAttackDamage() const
 
 bool APZDrone::IsInMeleeRange(const AActor* Target) const
 {
-	return Target && Melee.IsInRange(FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()));
+	return Target && AttackGate.IsInRange(FVector::Dist2D(GetActorLocation(), Target->GetActorLocation()));
 }
 
 bool APZDrone::TryMeleeAttack(AActor* Target)
@@ -94,7 +95,7 @@ bool APZDrone::TryMeleeAttack(AActor* Target)
 	}
 
 	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
-	if (!Melee.TryAttack(Now, FVector::Dist2D(GetActorLocation(), Target->GetActorLocation())))
+	if (!AttackGate.TryAttack(Now, FVector::Dist2D(GetActorLocation(), Target->GetActorLocation())))
 	{
 		return false;
 	}
@@ -106,6 +107,42 @@ bool APZDrone::TryMeleeAttack(AActor* Target)
 		TargetHealth->ApplyDamage(Damage, CameFrom);
 		UE_LOG(LogProtocolZero, Log, TEXT("%s melee attack on %s for %.1f (target health now %.1f)"),
 			*GetName(), *Target->GetName(), Damage, TargetHealth->GetCurrentHealth());
+	}
+	return true;
+}
+
+bool APZDrone::TryRangedAttack(AActor* Target)
+{
+	if (!Target || Health->IsDead() || !DroneData || !DroneData->ProjectileClass)
+	{
+		return false;
+	}
+
+	const UPZHealthComponent* TargetHealth = Target->FindComponentByClass<UPZHealthComponent>();
+	if (TargetHealth && TargetHealth->IsDead())
+	{
+		return false;
+	}
+
+	const double Now = GetWorld() ? GetWorld()->GetTimeSeconds() : 0.0;
+	if (!AttackGate.TryAttack(Now, FVector::Dist2D(GetActorLocation(), Target->GetActorLocation())))
+	{
+		return false;
+	}
+
+	FVector Direction = Target->GetActorLocation() - GetActorLocation();
+	Direction.Z = 0.0;
+	Direction.Normalize();
+	const FVector Muzzle = GetActorLocation() + Direction * DroneData->MuzzleOffset;
+	const FTransform SpawnTransform(Direction.Rotation(), Muzzle);
+
+	APZProjectile* Shot = GetWorld()->SpawnActorDeferred<APZProjectile>(DroneData->ProjectileClass, SpawnTransform, this, this,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (Shot)
+	{
+		Shot->SetDamage(GetAttackDamage());
+		Shot->FinishSpawning(SpawnTransform);
+		UE_LOG(LogProtocolZero, VeryVerbose, TEXT("%s fired"), *GetName());
 	}
 	return true;
 }

@@ -42,10 +42,6 @@ public:
 protected:
 	virtual void PostInitializeComponents() override;
 
-private:
-	UFUNCTION()
-	void HandleStop(const FHitResult& Hit);
-
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<USphereComponent> Collision;
 
@@ -55,6 +51,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UProjectileMovementComponent> Movement;
+
+private:
+	UFUNCTION()
+	void HandleStop(const FHitResult& Hit);
 
 	float Damage = 0.f;
 };

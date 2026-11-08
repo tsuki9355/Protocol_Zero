@@ -17,9 +17,10 @@ def group(drone_class, count, delay):
     return g
 
 
-# Placeholder until the M2-S05 roster: three small Hunter groups, five seconds apart.
+# Placeholder until the M2-S05 roster: three small Hunter groups, then two Sentries (M2-S04).
 WAVES = {
-    "DA_Wave_01": ([group(unreal.PZDrone, 2, 0.0), group(unreal.PZDrone, 2, 5.0), group(unreal.PZDrone, 3, 5.0)], 1.0, 1.0),
+    "DA_Wave_01": ([group(unreal.PZDrone, 2, 0.0), group(unreal.PZDrone, 2, 5.0), group(unreal.PZDrone, 3, 5.0),
+                    group(unreal.PZSentryDrone, 2, 5.0)], 1.0, 1.0),
 }
 
 tools = unreal.AssetToolsHelpers.get_asset_tools()
@@ -45,6 +46,7 @@ for actor in eas.get_all_level_actors():
     if actor.get_actor_label().startswith("TestHunter_"):
         eas.destroy_actor(actor)
         removed += 1
-les.save_current_level()
+if removed:
+    les.save_current_level()
 unreal.log(f"PZ: removed {removed} test Hunters from {MAP}")
 unreal.SystemLibrary.quit_editor()

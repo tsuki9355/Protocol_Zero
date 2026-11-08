@@ -14,7 +14,8 @@ class UStaticMeshComponent;
 /**
  * Hostile drone. Walks the navmesh, takes damage from player bolts and attacks on a
  * cooldown. Behaviour comes from its AI controller; tuning comes from a UPZDroneData asset.
- * The default setup is the Hunter: DA_Hunter tuning and APZHunterAIController.
+ * This class is the Hunter (melee, DA_Hunter, APZHunterAIController); APZSentryDrone is the
+ * ranged variant.
  */
 UCLASS()
 class PROTOCOL_ZERO_API APZDrone : public ACharacter
@@ -32,6 +33,13 @@ public:
 
 	/** True if Target is close enough for a melee hit. */
 	bool IsInMeleeRange(const AActor* Target) const;
+
+	/**
+	 * Fires the drone's projectile at Target if it is within attack range and the cooldown has
+	 * finished. Shots use the enemy projectile profile, so they hit the player and cover only.
+	 * @return True if a shot was fired.
+	 */
+	bool TryRangedAttack(AActor* Target);
 
 	/** Tuning asset for this drone. */
 	UPZDroneData* GetDroneData() const { return DroneData; }
@@ -60,17 +68,19 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Tuning")
 	TObjectPtr<UPZDroneData> DroneData;
 
+	/** Greybox body. Subclasses swap the mesh to tell drone types apart. */
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	TObjectPtr<UStaticMeshComponent> Body;
+
 private:
 	UFUNCTION()
 	void HandleDeath();
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
-	TObjectPtr<UStaticMeshComponent> Body;
-
-	UPROPERTY(VisibleAnywhere, Category = "Components")
 	TObjectPtr<UPZHealthComponent> Health;
 
-	FPZMeleeAttack Melee;
+	/** Range and cooldown gate shared by melee and ranged attacks. */
+	FPZMeleeAttack AttackGate;
 
 	float WaveDamageMultiplier = 1.f;
 

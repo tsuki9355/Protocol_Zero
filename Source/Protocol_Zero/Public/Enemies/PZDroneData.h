@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "Combat/PZProjectile.h"
 #include "PZDroneData.generated.h"
 
 /**
- * Tuning for one drone type. The Hunter is DA_Hunter in /Game/Data/Enemies.
+ * Tuning for one drone type: DA_Hunter and DA_Sentry in /Game/Data/Enemies.
  * Values are placeholders until the tuning pass; the design leaves exact numbers open.
  */
 UCLASS(BlueprintType)
@@ -24,17 +25,33 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Drone", meta = (ClampMin = "0"))
 	float MoveSpeed = 550.f;
 
-	/** Centre-to-centre distance at which the melee attack connects, in cm. */
+	/** Centre-to-centre distance at which the attack can be used, in cm: melee reach, or maximum firing distance for ranged drones. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Melee", meta = (ClampMin = "0"))
 	float AttackRange = 150.f;
 
-	/** Damage per melee hit. */
+	/** Damage per melee hit or shot, before the wave multiplier. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Melee", meta = (ClampMin = "0"))
 	float AttackDamage = 10.f;
 
-	/** Seconds between melee hits. */
+	/** Seconds between melee hits or shots. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Melee", meta = (ClampMin = "0"))
 	float AttackCooldown = 1.f;
+
+	/** Ranged drones only: distance they close to before holding position and firing, in cm. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ranged", meta = (ClampMin = "0"))
+	float PreferredRange = 0.f;
+
+	/** Ranged drones only: how far past PreferredRange the player can move before the drone repositions, in cm. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ranged", meta = (ClampMin = "0"))
+	float ResumeMargin = 150.f;
+
+	/** Ranged drones only: projectile fired by the attack. Empty for melee drones. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ranged")
+	TSubclassOf<APZProjectile> ProjectileClass;
+
+	/** Ranged drones only: distance in front of the drone where shots spawn, in cm. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ranged", meta = (ClampMin = "0"))
+	float MuzzleOffset = 60.f;
 
 	/** Length of the destruction effect before the drone despawns, in seconds. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Death", meta = (ClampMin = "0"))

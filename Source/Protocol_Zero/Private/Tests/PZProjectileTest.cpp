@@ -2,6 +2,7 @@
 
 #include "Misc/AutomationTest.h"
 #include "Combat/PZHealthComponent.h"
+#include "Combat/PZEnemyBolt.h"
 #include "Combat/PZProjectile.h"
 #include "Components/BoxComponent.h"
 #include "Engine/Engine.h"
@@ -16,7 +17,7 @@ namespace PZProjectileTest
 	constexpr float BoltDamage = 10.f;
 	constexpr float TargetMaxHealth = 100.f; // UPZHealthComponent default
 	constexpr float FrameTime = 1.f / 60.f;
-	constexpr int32 FramesToSimulate = 60; // one second: bolt travels ~2500 cm
+	constexpr int32 FramesToSimulate = 120; // two seconds: the slower enemy bolt still travels ~2400 cm
 	constexpr double TargetDistance = 800.0;
 	constexpr double CoverDistance = 400.0;
 	const FVector BoxExtent(50.0, 200.0, 200.0);
@@ -61,11 +62,11 @@ namespace PZProjectileTest
 			return Actor;
 		}
 
-		/** Fires a bolt from the origin along +X. */
-		TWeakObjectPtr<APZProjectile> FireBolt() const
+		/** Fires a bolt of the given class from the origin along +X. */
+		TWeakObjectPtr<APZProjectile> FireBolt(TSubclassOf<APZProjectile> BoltClass = APZProjectile::StaticClass()) const
 		{
 			const FTransform Transform(FRotator::ZeroRotator, FVector::ZeroVector);
-			APZProjectile* Bolt = World->SpawnActorDeferred<APZProjectile>(APZProjectile::StaticClass(), Transform);
+			APZProjectile* Bolt = World->SpawnActorDeferred<APZProjectile>(BoltClass, Transform);
 			Bolt->SetDamage(BoltDamage);
 			Bolt->FinishSpawning(Transform);
 			return Bolt;
@@ -145,6 +146,59 @@ bool FProjectileIgnoresPlayerTest::RunTest(const FString& Parameters)
 	// Assert
 	TestEqual(TEXT("player untouched"), PZProjectileTest::HealthOf(PlayerStandIn), PZProjectileTest::TargetMaxHealth);
 	TestEqual(TEXT("enemy behind the player is hit"), PZProjectileTest::HealthOf(Enemy), PZProjectileTest::TargetMaxHealth - PZProjectileTest::BoltDamage);
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FEnemyBoltDamagesPlayerTest, "Protocol_Zero.Projectile.EnemyBoltDamagesPlayer", PZ_PROJECTILE_TEST_FLAGS)
+bool FEnemyBoltDamagesPlayerTest::RunTest(const FString& Parameters)
+{
+	// Arrange
+	PZProjectileTest::FTestWorld Test;
+	AActor* PlayerStandIn = Test.SpawnBox(PZProjectileTest::TargetDistance, TEXT("Pawn"), true);
+	const TWeakObjectPtr<APZProjectile> Bolt = Test.FireBolt(APZEnemyBolt::StaticClass());
+
+	// Act
+	Test.Simulate();
+
+	// Assert
+	TestEqual(TEXT("player health"), PZProjectileTest::HealthOf(PlayerStandIn), PZProjectileTest::TargetMaxHealth - PZProjectileTest::BoltDamage);
+	TestFalse(TEXT("bolt destroyed on hit"), Bolt.IsValid());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FEnemyBoltStoppedByCoverTest, "Protocol_Zero.Projectile.CoverBlocksEnemyBolt", PZ_PROJECTILE_TEST_FLAGS)
+bool FEnemyBoltStoppedByCoverTest::RunTest(const FString& Parameters)
+{
+	// Arrange
+	PZProjectileTest::FTestWorld Test;
+	Test.SpawnBox(PZProjectileTest::CoverDistance, TEXT("BlockAll"), false);
+	AActor* PlayerStandIn = Test.SpawnBox(PZProjectileTest::TargetDistance, TEXT("Pawn"), true);
+	const TWeakObjectPtr<APZProjectile> Bolt = Test.FireBolt(APZEnemyBolt::StaticClass());
+
+	// Act
+	Test.Simulate();
+
+	// Assert
+	TestEqual(TEXT("player behind cover untouched"), PZProjectileTest::HealthOf(PlayerStandIn), PZProjectileTest::TargetMaxHealth);
+	TestFalse(TEXT("bolt destroyed by cover"), Bolt.IsValid());
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FEnemyBoltPassesDronesTest, "Protocol_Zero.Projectile.EnemyBoltPassesThroughDrones", PZ_PROJECTILE_TEST_FLAGS)
+bool FEnemyBoltPassesDronesTest::RunTest(const FString& Parameters)
+{
+	// Arrange
+	PZProjectileTest::FTestWorld Test;
+	AActor* Drone = Test.SpawnBox(PZProjectileTest::CoverDistance, TEXT("Enemy"), true);
+	AActor* PlayerStandIn = Test.SpawnBox(PZProjectileTest::TargetDistance, TEXT("Pawn"), true);
+	Test.FireBolt(APZEnemyBolt::StaticClass());
+
+	// Act
+	Test.Simulate();
+
+	// Assert
+	TestEqual(TEXT("no friendly fire on the drone"), PZProjectileTest::HealthOf(Drone), PZProjectileTest::TargetMaxHealth);
+	TestEqual(TEXT("player behind the drone is hit"), PZProjectileTest::HealthOf(PlayerStandIn), PZProjectileTest::TargetMaxHealth - PZProjectileTest::BoltDamage);
 	return true;
 }
 
